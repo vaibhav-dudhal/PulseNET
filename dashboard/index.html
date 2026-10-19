@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PulseNet | Self-Healing Distributed Network</title>
+  <meta name="pulsenet-build" content="vector-clock-monitor-2026.10.14.2">
+  <link rel="stylesheet" href="/static/style.css?v=vector-clock-monitor-20261014-2">
+</head>
+<body>
+<header>
+  <div class="brand"><div class="brand-mark">P</div><div><h1>PulseNet</h1><p>Self-Healing Distributed Network</p></div></div>
+  <div class="header-right"><span class="live-dot"></span><span id="cluster-status">Dashboard ready</span></div>
+</header>
+<main>
+  <section class="hero">
+    <div><span class="eyebrow">DISTRIBUTED SYSTEMS LAB</span><h2>Cluster Control Center</h2><p>Manage nodes and demonstrate automatic Bully leader election without using the terminal.</p></div>
+    <div class="hero-actions"><button class="btn btn-primary" id="start-cluster">▶ Start Cluster</button><button class="btn btn-danger" id="stop-cluster">■ Stop Cluster</button></div>
+  </section>
+  <section class="summary">
+    <article class="metric"><span>Total Nodes</span><strong id="total-nodes">0</strong><small>Registered in cluster</small></article>
+    <article class="metric"><span>Healthy Nodes</span><strong id="healthy-nodes">0</strong><small>Responding to health checks</small></article>
+    <article class="metric leader-metric"><span>Current Leader</span><strong id="leader">—</strong><small>Highest available node ID</small></article>
+  </section>
+  <section class="controls-panel">
+    <div class="section-heading"><div><h2>Cluster Operations</h2><p>Use these controls during your live demonstration.</p></div><span class="pill">WEB CONTROL</span></div>
+    <div class="operation-grid">
+      <div class="operation"><div class="op-icon blue">＋</div><div><h3>Add Node</h3><p>Launch the next available node ID and let it join the cluster.</p></div><button id="add-node" class="btn btn-primary">Add Node</button></div>
+      <div class="operation"><div class="op-icon purple">↻</div><div><h3>Trigger Election</h3><p>Manually start a Bully election among healthy nodes.</p></div><button id="trigger-election" class="btn btn-secondary">Run Election</button></div>
+    </div>
+    <div id="notice" class="notice" role="status">Ready. Start the cluster to begin.</div>
+  </section>
+  <section class="topology-section">
+    <div class="section-heading"><div><h2>Live Network Topology</h2><p>Connections update automatically as nodes fail, recover, join, or leave the cluster.</p></div><span class="pill">LIVE MAP</span></div>
+    <div class="topology-legend"><span><i class="legend-dot healthy-dot"></i>Healthy node</span><span><i class="legend-dot failed-dot"></i>Failed / unavailable</span><span><i class="legend-dot leader-dot"></i>Current coordinator</span><span><i class="legend-line"></i>Coordinator announcement</span></div>
+    <div id="topology" class="topology"><div class="empty-state">Start the cluster to see the live topology.</div></div>
+    <div class="election-flow" aria-label="Bully election steps"><div class="flow-step" data-flow="request"><b>1</b><span>Election request</span></div><div class="flow-connector"></div><div class="flow-step" data-flow="response"><b>2</b><span>Higher-ID response</span></div><div class="flow-connector"></div><div class="flow-step" data-flow="leader"><b>3</b><span>Leader selected</span></div><div class="flow-connector"></div><div class="flow-step" data-flow="announce"><b>4</b><span>Coordinator broadcast</span></div></div>
+    <p id="topology-caption" class="topology-caption">Waiting for cluster activity.</p>
+  </section>
+  <section class="lamport-section">
+    <div class="section-heading"><div><h2>Lamport Logical Clock Monitor</h2><p>Per-node logical counters advance on local events and merge message timestamps using max(local, received) + 1.</p></div><span class="pill">CAUSAL ORDER</span></div>
+    <div class="lamport-explainer"><strong>Lamport rule</strong><span>Local/send event: <code>C = C + 1</code></span><span>Receive message timestamp <code>T</code>: <code>C = max(C, T) + 1</code></span></div>
+    <div id="lamport-clocks" class="lamport-clocks"><div class="empty-state">Start the cluster to observe logical clocks.</div></div>
+    <p class="topology-caption">Logical timestamps are not wall-clock time. They preserve causal ordering when messages are received; independent concurrent events may not have a causal order.</p>
+  </section>
+  <section class="vector-section">
+    <div class="section-heading"><div><h2>Vector Clock Monitor</h2><p>Each vector records what a node knows about events at every node. Values merge component-by-component when messages arrive.</p></div><span class="pill">CAUSALITY + CONCURRENCY</span></div>
+    <div class="lamport-explainer vector-explainer"><strong>Vector clock rules</strong><span>Local/send event: increment this node's component</span><span>Receive: <code>V = max(V, message.V)</code>, then increment receiver's component</span></div>
+    <div id="vector-clocks" class="vector-clocks"><div class="empty-state">Start the cluster to observe vector clocks.</div></div>
+    <p class="topology-caption">A happens-before B when every component of V(A) is ≤ V(B), and at least one is smaller. Incomparable vectors indicate concurrent events.</p>
+  </section>
+  <section>
+    <div class="section-heading"><div><h2>Network Nodes</h2><p>Simulate a crash, recover a node, or remove its process.</p></div><span id="node-count" class="pill">0 nodes</span></div>
+    <div id="nodes" class="nodes"><div class="empty-state">Cluster is stopped. Click <b>Start Cluster</b> to launch Nodes 1, 2 and 3.</div></div>
+  </section>
+  <section class="events-section">
+    <div class="section-heading"><div><h2>System Event Log</h2><p>Live activity with Lamport (L) and vector (V) timestamps.</p></div><button id="refresh-button" class="btn btn-secondary">↻ Refresh</button></div>
+    <div id="events" class="events"><div class="empty-state">Waiting for system activity...</div></div>
+  </section>
+  <footer><span>PulseNet • Local distributed cluster</span><span>Vector Clock Monitor enabled · Build 2026.10.14.2 · Auto-refresh every 2 seconds</span></footer>
+</main>
+<div id="confirm-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-title"><div class="modal-card"><h2 id="confirm-title">Remove node?</h2><p id="confirm-message">This will stop the node process.</p><div class="modal-actions"><button id="cancel-confirm" class="btn btn-secondary">Cancel</button><button id="accept-confirm" class="btn btn-danger">Remove Node</button></div></div></div>
+<script src="/static/app.js?v=vector-clock-monitor-20261014-2"></script>
+</body>
+</html>
